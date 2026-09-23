@@ -23,6 +23,28 @@ const Course = {
   },
 
 
+  // Find course by title
+  async getByTitle(title) {
+    const [rows] = await db.execute(
+      "SELECT * FROM courses WHERE title = ? LIMIT 1",
+      [title]
+    );
+
+    return rows[0];
+  },
+
+
+  // Find course by title excluding current course
+  async getByTitleExcludingId(title, id) {
+    const [rows] = await db.execute(
+      "SELECT * FROM courses WHERE title = ? AND id != ? LIMIT 1",
+      [title, id]
+    );
+
+    return rows[0];
+  },
+
+
   // Create course
   async create(course) {
 

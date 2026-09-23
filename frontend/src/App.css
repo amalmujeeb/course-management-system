@@ -774,6 +774,21 @@ textarea.input {
 }
 
 
+.field-error {
+  margin: 4px 0 0;
+  color: var(--color-error-text);
+  font-size: 0.85rem;
+}
+
+.input-error {
+  border-color: var(--color-danger);
+}
+
+.input-error:focus {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}
+
 /* =========================================
    11. Messages and states
    ========================================= */
