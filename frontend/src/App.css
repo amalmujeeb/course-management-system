@@ -1566,3 +1566,46 @@ textarea.input {
     padding-left: 0;
   }
 }
+
+/* ---------- CR-004 Enrollment Summary ---------- */
+
+.section-card .dashboard-grid {
+  margin-top: 20px;
+}
+
+
+/* ---------- CR-004 Sorting Controls ---------- */
+
+.section-card-header select.form-control {
+  min-width: 220px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background-color: #ffffff;
+  font-size: 14px;
+  color: #1e293b;
+  cursor: pointer;
+}
+
+.section-card-header select.form-control:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+
+/* ---------- Responsive Sorting ---------- */
+
+@media (max-width: 768px) {
+
+  .section-card-header {
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+
+  .section-card-header select.form-control {
+    width: 100%;
+    min-width: 0;
+  }
+
+}
