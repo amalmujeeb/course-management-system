@@ -7,9 +7,9 @@ const api = axios.create({
 });
 
 
-// --------------------------------------------------
-// Add JWT token to requests
-// --------------------------------------------------
+// ==================================================
+// Add JWT token to every request
+// ==================================================
 api.interceptors.request.use(
   (config) => {
 
@@ -28,27 +28,36 @@ api.interceptors.request.use(
 );
 
 
-// --------------------------------------------------
-// Global response interceptor
-// Handles expired / invalid authentication sessions
-// --------------------------------------------------
+// ==================================================
+// Global Axios Response Interceptor
+// ==================================================
+
 let isRedirectingToLogin = false;
 
 api.interceptors.response.use(
 
+  // ------------------------------------------------
   // Successful response
+  // ------------------------------------------------
   (response) => {
     return response;
   },
 
+
+  // ------------------------------------------------
   // Error response
+  // ------------------------------------------------
   (error) => {
 
-    // ------------------------------------------------
-    // Network error
-    // No response means the server did not respond.
-    // Do NOT clear authentication data.
-    // ------------------------------------------------
+    // ==================================================
+    // 1. Network error
+    // ==================================================
+    // If there is no response from the server,
+    // this is a network/server connection problem.
+    //
+    // DO NOT clear authentication information.
+    // ==================================================
+
     if (!error.response) {
       return Promise.reject(error);
     }
@@ -56,19 +65,28 @@ api.interceptors.response.use(
 
     const status = error.response.status;
 
-    // ------------------------------------------------
-    // Only handle HTTP 401
-    // 403 and other errors must continue normally.
-    // ------------------------------------------------
+
+    // ==================================================
+    // 2. Only HTTP 401 is handled here
+    // ==================================================
+    //
+    // 403 and other errors are NOT treated as
+    // session expiry.
+    // ==================================================
+
     if (status !== 401) {
       return Promise.reject(error);
     }
 
 
-    // ------------------------------------------------
-    // Do NOT treat failed login as session expiry.
-    // A 401 from /auth/login means invalid credentials.
-    // ------------------------------------------------
+    // ==================================================
+    // 3. Exclude the Login request
+    // ==================================================
+    //
+    // A 401 from /auth/login means incorrect username
+    // or password. It must NOT trigger logout.
+    // ==================================================
+
     const requestUrl = error.config?.url || "";
 
     if (requestUrl.includes("/auth/login")) {
@@ -76,37 +94,44 @@ api.interceptors.response.use(
     }
 
 
-    // ------------------------------------------------
-    // Prevent multiple simultaneous 401 responses
-    // from causing multiple redirects.
-    // ------------------------------------------------
+    // ==================================================
+    // 4. Prevent duplicate redirects
+    // ==================================================
+
     if (!isRedirectingToLogin) {
 
       isRedirectingToLogin = true;
 
 
-      // ----------------------------------------------
-      // Save the page the user was trying to access.
-      // ----------------------------------------------
+      // ==================================================
+      // 5. Preserve the current page
+      // ==================================================
+
       const currentPath =
         window.location.pathname +
         window.location.search +
         window.location.hash;
 
 
-      // ----------------------------------------------
-      // Clear expired authentication information.
-      // ----------------------------------------------
+      // ==================================================
+      // 6. Clear expired authentication information
+      // ==================================================
+
       clearAuth();
 
 
-      // ----------------------------------------------
-      // Redirect to Login and pass the original page.
-      // ----------------------------------------------
+      // ==================================================
+      // 7. Redirect to Login
+      // ==================================================
+
       if (currentPath !== "/login") {
 
-        window.location.href =
-          `/login?sessionExpired=true&from=${encodeURIComponent(currentPath)}`;
+        const loginUrl =
+          `/login?sessionExpired=true&from=${encodeURIComponent(
+            currentPath
+          )}`;
+
+        window.location.href = loginUrl;
 
       } else {
 

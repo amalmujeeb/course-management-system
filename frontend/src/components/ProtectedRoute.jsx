@@ -1,3 +1,4 @@
+
 import { Navigate, useLocation } from "react-router-dom";
 
 import { getUser, getToken } from "../services/auth";
@@ -11,33 +12,64 @@ function ProtectedRoute({ children, role }) {
   const user = getUser();
 
 
-  // ---------- 1. Not logged in ----------
+  // ==================================================
+  // 1. User is NOT logged in
+  // ==================================================
+
   if (!token || !user) {
+
     return (
       <Navigate
         to="/login"
-        state={{ from: location.pathname }}
+        state={{
+          from:
+            location.pathname +
+            location.search +
+            location.hash
+        }}
         replace
       />
     );
+
   }
 
 
-  // ---------- 2. Logged in but wrong role ----------
-  if (role && user.role !== role) {
+  // ==================================================
+  // 2. User is logged in but has the wrong role
+  // ==================================================
 
-    // A student who opens /admin is sent to the student area and the
-    // other way around.
-    const fallback =
-      user.role === "admin" ? "/admin" : "/student";
+  if (
+    role &&
+    user.role !== role
+  ) {
 
-    return <Navigate to={fallback} replace />;
+    return (
+
+      <div className="access-denied-container">
+
+        <h1>
+          Access Denied
+        </h1>
+
+        <p>
+          Access denied. You do not have
+          permission to access this page.
+        </p>
+
+      </div>
+
+    );
+
   }
 
 
-  // ---------- 3. Allowed ----------
+  // ==================================================
+  // 3. User is authenticated and authorized
+  // ==================================================
+
   return children;
 }
+
 
 export default ProtectedRoute;
 
