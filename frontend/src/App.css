@@ -447,7 +447,6 @@ a:hover {
 }
 
 
-
 /* =========================================
    6. Statistics strip
    ========================================= */
@@ -866,8 +865,6 @@ textarea.input {
   background: none;
   padding: 0;
 }
-
-
 
 
 /* =========================================
@@ -1457,6 +1454,7 @@ textarea.input {
 
 }
 
+
 /* ---------- Course Filters ---------- */
 
 .filter-bar {
@@ -1566,6 +1564,7 @@ textarea.input {
     padding-left: 0;
   }
 }
+
 
 /* ---------- CR-004 Enrollment Summary ---------- */
 

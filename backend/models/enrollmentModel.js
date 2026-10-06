@@ -108,11 +108,26 @@ const Enrollment = {
 
 
   // Delete enrollment
+  // Used by the admin
   async delete(id) {
     const [result] = await db.execute(
       `DELETE FROM enrollments
        WHERE id = ?`,
       [id]
+    );
+
+    return result;
+  },
+
+
+  // Cancel enrollment for the logged-in student only
+  // Both enrollment ID and student ID must match
+  async deleteByStudent(id, studentId) {
+    const [result] = await db.execute(
+      `DELETE FROM enrollments
+       WHERE id = ?
+       AND student_id = ?`,
+      [id, studentId]
     );
 
     return result;

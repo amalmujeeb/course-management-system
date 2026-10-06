@@ -1,79 +1,122 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FaSearch } from "react-icons/fa";
+import { FaSearch, FaTimes } from "react-icons/fa";
 
 import api from "../services/api";
 import { getUser } from "../services/auth";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-
 function MyEnrollments() {
-
   const [enrollments, setEnrollments] = useState([]);
 
   const [sortOption, setSortOption] = useState("newest");
 
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState("");
+
+  const [success, setSuccess] = useState("");
+
+  const [cancellingId, setCancellingId] = useState(null);
 
   const user = getUser();
 
+  // ======================================================
+  // Load the logged-in student's enrollments
+  // ======================================================
 
-  // ---------- Load the logged-in student's enrollments ----------
   useEffect(() => {
-
     const getEnrollments = async () => {
-
       try {
+        setError("");
 
         const response = await api.get("/enrollments/my");
 
         setEnrollments(response.data.enrollments || []);
-
       } catch (error) {
-
         setError(
           error.response?.data?.message ||
-          "Failed to load your enrollments"
+            "Failed to load your enrollments"
         );
-
       } finally {
-
         setLoading(false);
-
       }
     };
 
     getEnrollments();
-
   }, []);
 
+  // ======================================================
+  // Format enrollment date
+  // ======================================================
 
-  // ---------- Format enrollment date ----------
   const formatDate = (value) => {
-
     if (!value) return "-";
 
     return new Date(value).toLocaleDateString();
-
   };
 
+  // ======================================================
+  // Safe price conversion
+  // ======================================================
 
-  // ---------- Safe price conversion ----------
   const getSafePrice = (price) => {
-
     const numericPrice = Number(price);
 
     return Number.isFinite(numericPrice) ? numericPrice : 0;
-
   };
 
+  // ======================================================
+  // Cancel enrollment
+  // ======================================================
 
-  // ---------- Enrollment Summary ----------
+  const handleCancelEnrollment = async (enrollmentId) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to cancel this enrollment?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+    setCancellingId(enrollmentId);
+
+    try {
+      const response = await api.delete(
+        `/enrollments/my/${enrollmentId}`
+      );
+
+      // Remove the cancelled enrollment
+      // from the current list without reloading
+      setEnrollments((currentEnrollments) =>
+        currentEnrollments.filter(
+          (enrollment) => enrollment.id !== enrollmentId
+        )
+      );
+
+      // Show success message
+      setSuccess(
+        response.data.message ||
+          "Enrollment cancelled successfully"
+      );
+    } catch (error) {
+      setError(
+        error.response?.data?.message ||
+          "Failed to cancel enrollment. Please try again."
+      );
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  // ======================================================
+  // Enrollment Summary
+  // ======================================================
 
   const totalEnrolledCourses = enrollments.length;
-
 
   const totalEnrolledValue = enrollments.reduce(
     (total, enrollment) =>
@@ -81,12 +124,10 @@ function MyEnrollments() {
     0
   );
 
-
   const averageCoursePrice =
     totalEnrolledCourses > 0
       ? totalEnrolledValue / totalEnrolledCourses
       : 0;
-
 
   const distinctCategories = new Set(
     enrollments
@@ -94,21 +135,18 @@ function MyEnrollments() {
       .filter(Boolean)
   ).size;
 
-
-  // ---------- Sort enrollments ----------
-  // Create a copy so the original API array is not modified.
+  // ======================================================
+  // Sort enrollments
+  // ======================================================
 
   const sortedEnrollments = [...enrollments].sort(
     (a, b) => {
-
       switch (sortOption) {
-
         case "newest":
           return (
             new Date(b.enrolled_at).getTime() -
             new Date(a.enrolled_at).getTime()
           );
-
 
         case "oldest":
           return (
@@ -116,20 +154,17 @@ function MyEnrollments() {
             new Date(b.enrolled_at).getTime()
           );
 
-
         case "priceHigh":
           return (
             getSafePrice(b.price) -
             getSafePrice(a.price)
           );
 
-
         case "priceLow":
           return (
             getSafePrice(a.price) -
             getSafePrice(b.price)
           );
-
 
         case "titleAZ":
           return (a.title || "").localeCompare(
@@ -140,44 +175,35 @@ function MyEnrollments() {
             }
           );
 
-
         default:
           return (
             new Date(b.enrolled_at).getTime() -
             new Date(a.enrolled_at).getTime()
           );
-
       }
-
     }
   );
 
-
   return (
-
     <>
       <Navbar />
 
       <div className="container">
 
-        {/* ---------- Page Header ---------- */}
+        {/* ==================================================
+            Page Header
+        ================================================== */}
 
         <div className="page-header">
-
           <div>
-
             <h1>My Enrollments</h1>
 
             <p className="page-subtitle">
-
               {user?.full_name
                 ? `${user.full_name}, these are the courses you are enrolled in.`
                 : "These are the courses you are enrolled in."}
-
             </p>
-
           </div>
-
 
           <Link
             to="/courses"
@@ -186,11 +212,11 @@ function MyEnrollments() {
             <FaSearch />
             Browse More Courses
           </Link>
-
         </div>
 
-
-        {/* ---------- Loading ---------- */}
+        {/* ==================================================
+            Loading
+        ================================================== */}
 
         {loading && (
           <p className="loading">
@@ -198,8 +224,9 @@ function MyEnrollments() {
           </p>
         )}
 
-
-        {/* ---------- Error ---------- */}
+        {/* ==================================================
+            Error
+        ================================================== */}
 
         {error && !loading && (
           <p className="error">
@@ -207,15 +234,24 @@ function MyEnrollments() {
           </p>
         )}
 
+        {/* ==================================================
+            Success
+        ================================================== */}
 
-        {/* ---------- Empty State ---------- */}
+        {success && (
+          <div className="success-message">
+            {success}
+          </div>
+        )}
+
+        {/* ==================================================
+            Empty State
+        ================================================== */}
 
         {!loading &&
           !error &&
           enrollments.length === 0 && (
-
             <div className="empty-box">
-
               <p className="empty">
                 You have not enrolled in any courses yet.
               </p>
@@ -227,34 +263,27 @@ function MyEnrollments() {
                 <FaSearch />
                 Find a Course
               </Link>
-
             </div>
-
           )}
 
-
-        {/* ---------- Enrollment Summary ---------- */}
+        {/* ==================================================
+            Enrollment Summary
+        ================================================== */}
 
         {!loading &&
           !error &&
           enrollments.length > 0 && (
-
             <section className="section-card">
 
               <div className="section-card-header">
-
                 <h2>Enrollment Summary</h2>
-
               </div>
 
-
               <div className="dashboard-grid">
-
 
                 {/* Total Courses */}
 
                 <div className="dashboard-card">
-
                   <span className="dashboard-card-value">
                     {totalEnrolledCourses}
                   </span>
@@ -262,14 +291,11 @@ function MyEnrollments() {
                   <span className="dashboard-card-label">
                     Total Enrolled Courses
                   </span>
-
                 </div>
-
 
                 {/* Total Value */}
 
                 <div className="dashboard-card">
-
                   <span className="dashboard-card-value">
                     Rs. {totalEnrolledValue.toFixed(2)}
                   </span>
@@ -277,14 +303,11 @@ function MyEnrollments() {
                   <span className="dashboard-card-label">
                     Total Course Value
                   </span>
-
                 </div>
-
 
                 {/* Average Price */}
 
                 <div className="dashboard-card">
-
                   <span className="dashboard-card-value">
                     Rs. {averageCoursePrice.toFixed(2)}
                   </span>
@@ -292,14 +315,11 @@ function MyEnrollments() {
                   <span className="dashboard-card-label">
                     Average Course Price
                   </span>
-
                 </div>
-
 
                 {/* Distinct Categories */}
 
                 <div className="dashboard-card">
-
                   <span className="dashboard-card-value">
                     {distinctCategories}
                   </span>
@@ -307,29 +327,23 @@ function MyEnrollments() {
                   <span className="dashboard-card-label">
                     Distinct Categories
                   </span>
-
                 </div>
 
-
               </div>
-
             </section>
-
           )}
 
-
-        {/* ---------- Sorting Controls ---------- */}
+        {/* ==================================================
+            Sorting Controls
+        ================================================== */}
 
         {!loading &&
           !error &&
           enrollments.length > 0 && (
-
             <section className="section-card">
 
               <div className="section-card-header">
-
                 <h2>Sort Enrollments</h2>
-
 
                 <select
                   value={sortOption}
@@ -339,7 +353,6 @@ function MyEnrollments() {
                   className="form-control"
                   aria-label="Sort enrollments"
                 >
-
                   <option value="newest">
                     Newest Enrolled
                   </option>
@@ -359,31 +372,26 @@ function MyEnrollments() {
                   <option value="titleAZ">
                     Course Title: A to Z
                   </option>
-
                 </select>
-
               </div>
 
             </section>
-
           )}
 
-
-        {/* ---------- Enrollment Cards ---------- */}
+        {/* ==================================================
+            Enrollment Cards
+        ================================================== */}
 
         {!loading &&
           !error &&
           enrollments.length > 0 && (
-
             <div className="course-grid">
 
               {sortedEnrollments.map((enrollment) => (
-
                 <article
                   className="course-card"
                   key={enrollment.id}
                 >
-
 
                   <img
                     src={enrollment.image}
@@ -392,9 +400,7 @@ function MyEnrollments() {
                     loading="lazy"
                   />
 
-
                   <div className="course-card-body">
-
 
                     {/* Category + Level */}
 
@@ -410,50 +416,53 @@ function MyEnrollments() {
 
                     </div>
 
-
                     {/* Course Title */}
 
                     <h3 className="course-card-title">
                       {enrollment.title}
                     </h3>
 
-
                     {/* Course Description */}
 
                     <p className="course-card-summary">
-
                       {enrollment.description?.slice(0, 100)}
 
                       {enrollment.description?.length > 100
                         ? "..."
                         : ""}
-
                     </p>
-
 
                     {/* Course Information */}
 
                     <ul className="course-card-meta">
 
                       <li>
-                        <strong>Duration:</strong>{" "}
+                        <strong>
+                          Duration:
+                        </strong>{" "}
                         {enrollment.duration}
                       </li>
 
-
                       <li>
-                        <strong>Price:</strong>{" "}
-                        Rs. {getSafePrice(enrollment.price).toFixed(2)}
+                        <strong>
+                          Price:
+                        </strong>{" "}
+                        Rs.{" "}
+                        {getSafePrice(
+                          enrollment.price
+                        ).toFixed(2)}
                       </li>
 
-
                       <li>
-                        <strong>Enrolled on:</strong>{" "}
-                        {formatDate(enrollment.enrolled_at)}
+                        <strong>
+                          Enrolled on:
+                        </strong>{" "}
+                        {formatDate(
+                          enrollment.enrolled_at
+                        )}
                       </li>
 
                     </ul>
-
 
                     {/* View Course */}
 
@@ -464,25 +473,43 @@ function MyEnrollments() {
                       View Course
                     </Link>
 
+                    {/* Cancel Enrollment */}
+
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-block"
+                      onClick={() =>
+                        handleCancelEnrollment(
+                          enrollment.id
+                        )
+                      }
+                      disabled={
+                        cancellingId === enrollment.id
+                      }
+                      style={{
+                        marginTop: "10px",
+                      }}
+                    >
+                      <FaTimes />
+
+                      {cancellingId === enrollment.id
+                        ? "Cancelling..."
+                        : "Cancel Enrollment"}
+                    </button>
 
                   </div>
 
                 </article>
-
               ))}
 
             </div>
-
           )}
 
       </div>
 
       <Footer />
-
     </>
-
   );
-
 }
 
 export default MyEnrollments;

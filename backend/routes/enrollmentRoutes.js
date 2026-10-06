@@ -2,16 +2,28 @@ const express = require("express");
 
 const router = express.Router();
 
+
 const {
   enrollInCourse,
   getMyEnrollments,
+  cancelMyEnrollment,
   getCourseEnrollments,
   getAllEnrollments,
   deleteEnrollment,
 } = require("../controllers/enrollmentController");
 
-const authMiddleware = require("../middleware/authMiddleware");
-const roleMiddleware = require("../middleware/roleMiddleware");
+
+const authMiddleware =
+  require("../middleware/authMiddleware");
+
+const roleMiddleware =
+  require("../middleware/roleMiddleware");
+
+
+
+// ======================================================
+// STUDENT ROUTES
+// ======================================================
 
 
 // Student (JWT + student role required)
@@ -32,6 +44,22 @@ router.get(
   roleMiddleware(["student"]),
   getMyEnrollments
 );
+
+
+// Student (JWT + student role required)
+// Cancel my own enrollment
+router.delete(
+  "/my/:id",
+  authMiddleware,
+  roleMiddleware(["student"]),
+  cancelMyEnrollment
+);
+
+
+
+// ======================================================
+// ADMIN ROUTES
+// ======================================================
 
 
 // Admin (JWT + admin role required)
@@ -62,6 +90,7 @@ router.delete(
   roleMiddleware(["admin"]),
   deleteEnrollment
 );
+
 
 
 module.exports = router;
