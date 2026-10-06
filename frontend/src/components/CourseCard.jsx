@@ -3,11 +3,32 @@ import { FaEye } from "react-icons/fa";
 
 function CourseCard({ course }) {
 
+  const getAvailabilityText = () => {
+    if (course.max_students === null || course.max_students === undefined) {
+      return "Unlimited";
+    }
+
+    if (course.is_full || Number(course.seats_remaining) <= 0) {
+      return "Course Full";
+    }
+
+    return `${course.enrolled_count || 0} / ${course.max_students} students`;
+  };
+
+  const getAvailabilityClass = () => {
+    if (course.max_students === null || course.max_students === undefined) {
+      return "course-availability availability-unlimited";
+    }
+
+    if (course.is_full || Number(course.seats_remaining) <= 0) {
+      return "course-availability availability-full";
+    }
+
+    return "course-availability availability-available";
+  };
+
   return (
-
     <article className="course-card">
-
-      {/* Course image from the database */}
       <img
         src={course.image}
         alt={course.title}
@@ -15,42 +36,33 @@ function CourseCard({ course }) {
         loading="lazy"
       />
 
-
       <div className="course-card-body">
-
         <div className="course-card-tags">
-          <span className="tag tag-category">
-            {course.category}
-          </span>
-
-          <span className="tag tag-level">
-            {course.level}
-          </span>
+          <span className="tag tag-category">{course.category}</span>
+          <span className="tag tag-level">{course.level}</span>
         </div>
 
+        <h3 className="course-card-title">{course.title}</h3>
 
-        <h3 className="course-card-title">
-          {course.title}
-        </h3>
-
-
-        {/* Short summary - we trim the long description */}
         <p className="course-card-summary">
           {course.description?.slice(0, 110)}
           {course.description?.length > 110 ? "..." : ""}
         </p>
 
-
         <ul className="course-card-meta">
           <li>
             <strong>Duration:</strong> {course.duration}
           </li>
-
           <li>
             <strong>Price:</strong> Rs. {course.price}
           </li>
+          <li>
+            <strong>Availability:</strong>{" "}
+            <span className={getAvailabilityClass()}>
+              {getAvailabilityText()}
+            </span>
+          </li>
         </ul>
-
 
         <Link
           to={`/courses/${course.id}`}
@@ -59,11 +71,10 @@ function CourseCard({ course }) {
           <FaEye />
           View Details
         </Link>
-
       </div>
-
     </article>
   );
 }
 
 export default CourseCard;
+

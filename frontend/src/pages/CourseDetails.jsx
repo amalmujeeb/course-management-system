@@ -56,6 +56,57 @@ function CourseDetails() {
 
 
   // ======================================================
+  // Availability helpers - CR-007
+  // ======================================================
+
+  const isCourseFull =
+    course &&
+    course.max_students !== null &&
+    course.max_students !== undefined &&
+    (
+      course.is_full ||
+      Number(course.seats_remaining) <= 0
+    );
+
+
+  const getAvailabilityText = () => {
+
+    if (
+      course.max_students === null ||
+      course.max_students === undefined
+    ) {
+      return "Unlimited";
+    }
+
+    if (isCourseFull) {
+      return "Course Full";
+    }
+
+    return `${course.enrolled_count || 0} / ${course.max_students} students`;
+
+  };
+
+
+  const getAvailabilityClass = () => {
+
+    if (
+      course.max_students === null ||
+      course.max_students === undefined
+    ) {
+      return "course-availability availability-unlimited";
+    }
+
+    if (isCourseFull) {
+      return "course-availability availability-full";
+    }
+
+    return "course-availability availability-available";
+
+  };
+
+
+
+  // ======================================================
   // Load the course
   // ======================================================
 
@@ -170,6 +221,19 @@ function CourseDetails() {
 
   const handleEnroll = async () => {
 
+    // Frontend availability check.
+    // Backend remains authoritative.
+    if (isCourseFull) {
+
+      setError(
+        "Course is full. No seats are available."
+      );
+
+      return;
+
+    }
+
+
     setError("");
 
     setSuccess("");
@@ -198,18 +262,46 @@ function CourseDetails() {
       // Course is now actively enrolled
       setEnrolled(true);
 
+
+      // Refresh course availability after enrollment
+      const courseResponse =
+        await api.get(`/courses/${id}`);
+
+      setCourse(
+        courseResponse.data.course
+      );
+
     } catch (error) {
 
-      // 409 = already enrolled
+      // 409 can mean either:
+      // - already enrolled
+      // - course is full
       if (
         error.response?.status === 409
       ) {
 
-        setEnrolled(true);
+        const message =
+          error.response?.data?.message || "";
 
-        setError(
-          "You are already enrolled in this course. You can see it in My Enrollments."
-        );
+
+        if (
+          message.toLowerCase().includes("full") ||
+          message.toLowerCase().includes("no seats")
+        ) {
+
+          setError(
+            "Course is full. No seats are available."
+          );
+
+        } else {
+
+          setEnrolled(true);
+
+          setError(
+            "You are already enrolled in this course. You can see it in My Enrollments."
+          );
+
+        }
 
       } else {
 
@@ -441,7 +533,44 @@ function CourseDetails() {
               </div>
 
 
+              {/* ==================================================
+                  CR-007 Availability
+              ================================================== */}
+
+              <div>
+
+                <dt>
+                  Availability
+                </dt>
+
+                <dd>
+
+                  <span className={getAvailabilityClass()}>
+                    {getAvailabilityText()}
+                  </span>
+
+                </dd>
+
+              </div>
+
+
             </dl>
+
+
+
+            {/* ==================================================
+                Full course notice - CR-007
+            ================================================== */}
+
+            {isCourseFull && !enrolled && (
+
+              <p className="error">
+
+                Course Full — no seats are currently available.
+
+              </p>
+
+            )}
 
 
 
@@ -527,6 +656,34 @@ function CourseDetails() {
                         You are currently enrolled
                         in this course.
                       </p>
+
+
+                      <Link
+                        to="/my-enrollments"
+                        className="btn btn-outline"
+                      >
+
+                        <FaGraduationCap />
+
+                        My Enrollments
+
+                      </Link>
+
+                    </>
+
+                  ) : isCourseFull ? (
+
+                    <>
+
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-lg"
+                        disabled
+                      >
+
+                        Course Full
+
+                      </button>
 
 
                       <Link
@@ -635,3 +792,4 @@ function CourseDetails() {
 
 
 export default CourseDetails;
+
