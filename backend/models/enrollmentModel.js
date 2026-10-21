@@ -343,6 +343,68 @@ const Enrollment = {
     return rows;
   },
 
+  // Retrieve one filtered admin page and its matching record count.
+  async getAdminPage(filters) {
+    const conditions = [];
+    const values = [];
+
+    if (filters.q) {
+      conditions.push("(LOCATE(?, LOWER(u.full_name)) > 0 OR LOCATE(?, LOWER(u.username)) > 0)");
+      values.push(filters.q.toLowerCase(), filters.q.toLowerCase());
+    }
+    if (filters.courseId !== undefined) {
+      conditions.push("e.course_id = ?");
+      values.push(filters.courseId);
+    }
+    if (filters.from) {
+      conditions.push("e.enrolled_at >= ?");
+      values.push(filters.from);
+    }
+    if (filters.to) {
+      conditions.push("e.enrolled_at < DATE_ADD(?, INTERVAL 1 DAY)");
+      values.push(filters.to);
+    }
+
+    const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+    const [countRows] = await db.execute(
+      `SELECT COUNT(*) AS total
+       FROM enrollments e
+       JOIN users u ON e.student_id = u.id
+       JOIN courses c ON e.course_id = c.id
+       ${where}`,
+      values
+    );
+
+    const sortColumns = {
+      date: "e.enrolled_at",
+      student: "u.full_name",
+      course: "c.title",
+    };
+    const direction = filters.order.toUpperCase();
+    const offset = (filters.page - 1) * filters.limit;
+    const [rows] = await db.execute(
+      `SELECT
+          e.id, e.enrolled_at,
+          u.id AS student_id, u.username, u.full_name,
+          c.id AS course_id, c.title, c.category, c.level, c.max_students,
+          (SELECT COUNT(*) FROM enrollments e2 WHERE e2.course_id = c.id) AS enrolled_count,
+          CASE WHEN c.max_students IS NULL THEN NULL ELSE c.max_students -
+            (SELECT COUNT(*) FROM enrollments e2 WHERE e2.course_id = c.id) END AS seats_remaining,
+          CASE WHEN c.max_students IS NULL THEN FALSE WHEN
+            (SELECT COUNT(*) FROM enrollments e2 WHERE e2.course_id = c.id) >= c.max_students
+            THEN TRUE ELSE FALSE END AS is_full
+       FROM enrollments e
+       JOIN users u ON e.student_id = u.id
+       JOIN courses c ON e.course_id = c.id
+       ${where}
+       ORDER BY ${sortColumns[filters.sort]} ${direction}, e.id ${direction}
+       LIMIT ? OFFSET ?`,
+      [...values, filters.limit, offset]
+    );
+
+    return { enrollments: rows, total: Number(countRows[0].total) };
+  },
+
 
   // ======================================================
   // Delete enrollment - ADMIN

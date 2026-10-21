@@ -49,6 +49,8 @@ CREATE TABLE IF NOT EXISTS enrollments (
 
     enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
+    INDEX idx_enrollments_enrolled_at (enrolled_at),
+
     -- A student cannot enroll in the same course twice
     UNIQUE (student_id, course_id),
 

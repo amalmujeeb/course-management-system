@@ -305,17 +305,78 @@ const getCourseEnrollments = async (req, res) => {
 const getAllEnrollments = async (req, res) => {
 
   try {
+    const { q, courseId, from, to } = req.query;
+    const pageValue = req.query.page ?? "1";
+    const limitValue = req.query.limit ?? "20";
+    const sort = req.query.sort ?? "date";
+    const order = req.query.order ?? "desc";
+    const positiveInteger = (value) => /^\d+$/.test(String(value)) &&
+      Number.isSafeInteger(Number(value)) && Number(value) > 0;
+    const validDate = (value) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+      const date = new Date(`${value}T00:00:00Z`);
+      return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+    };
 
-    const enrollments =
-      await Enrollment.getAll();
+    if (q !== undefined && typeof q !== "string") {
+      return res.status(400).json({ message: "q must be a string" });
+    }
+
+    if (!positiveInteger(pageValue)) {
+      return res.status(400).json({ message: "page must be a positive integer" });
+    }
+    if (!positiveInteger(limitValue) || Number(limitValue) > 100) {
+      return res.status(400).json({ message: "limit must be an integer between 1 and 100" });
+    }
+    if (courseId !== undefined && !positiveInteger(courseId)) {
+      return res.status(400).json({ message: "courseId must be a positive integer" });
+    }
+    if (from !== undefined && !validDate(from)) {
+      return res.status(400).json({ message: "from must be a valid YYYY-MM-DD date" });
+    }
+    if (to !== undefined && !validDate(to)) {
+      return res.status(400).json({ message: "to must be a valid YYYY-MM-DD date" });
+    }
+    if (from && to && from > to) {
+      return res.status(400).json({ message: "from must not be later than to" });
+    }
+    if (!new Set(["date", "student", "course"]).has(sort)) {
+      return res.status(400).json({ message: "sort must be date, student, or course" });
+    }
+    if (!new Set(["asc", "desc"]).has(order)) {
+      return res.status(400).json({ message: "order must be asc or desc" });
+    }
+
+    if (courseId !== undefined && !(await Course.getById(Number(courseId)))) {
+      return res.status(400).json({ message: "courseId does not identify an existing course" });
+    }
+
+    const page = Number(pageValue);
+    const limit = Number(limitValue);
+    const { enrollments, total } = await Enrollment.getAdminPage({
+      q: q?.trim() || "",
+      courseId: courseId === undefined ? undefined : Number(courseId),
+      from,
+      to,
+      sort,
+      order,
+      page,
+      limit,
+    });
 
 
     res.status(200).json({
 
       message:
-        "All enrollments retrieved successfully",
+        "Enrollments retrieved successfully",
 
       enrollments,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
 
     });
 
