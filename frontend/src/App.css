@@ -1638,3 +1638,52 @@ textarea.input {
   font-size: 0.82rem;
   line-height: 1.4;
 }
+
+/* ---------- CR-009 Reporting ---------- */
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.report-grid .section-card {
+  min-width: 0;
+}
+
+.report-bars {
+  display: grid;
+  gap: 16px;
+}
+
+.report-bar-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+}
+
+.report-bar-track {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.report-bar-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-primary);
+  transition: width 0.2s ease;
+}
+
+.dashboard-card-date {
+  font-size: 1.35rem;
+}
+
+@media (max-width: 600px) {
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+}
