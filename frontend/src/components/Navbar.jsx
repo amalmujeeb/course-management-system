@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   FaBars,
@@ -24,6 +24,17 @@ function Navbar() {
 
   // Mobile menu open / closed
   const [menuOpen, setMenuOpen] = useState(false);
+  const [, setAuthVersion] = useState(0);
+
+  useEffect(() => {
+    const refreshUser = () => setAuthVersion((version) => version + 1);
+    window.addEventListener("auth-user-updated", refreshUser);
+    window.addEventListener("storage", refreshUser);
+    return () => {
+      window.removeEventListener("auth-user-updated", refreshUser);
+      window.removeEventListener("storage", refreshUser);
+    };
+  }, []);
 
   // Read the current user from localStorage on every render
   const loggedIn = isLoggedIn();
@@ -147,6 +158,11 @@ function Navbar() {
           {loggedIn ? (
 
             <div className="navbar-user">
+
+              <NavLink to="/profile" className={linkClass} onClick={closeMenu}>
+                <FaUser />
+                Profile
+              </NavLink>
 
               <span className="navbar-username">
                 <FaUser />

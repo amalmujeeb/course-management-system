@@ -14,6 +14,7 @@ import MyEnrollments from "./pages/MyEnrollments";
 import AdminDashboard from "./pages/AdminDashboard";
 import ManageCourses from "./pages/ManageCourses";
 import ManageEnrollments from "./pages/ManageEnrollments";
+import Profile from "./pages/Profile";
 
 // ---------- Other ----------
 import NotFound from "./pages/NotFound";
@@ -38,6 +39,15 @@ function App() {
         <Route path="/courses" element={<Courses />} />
 
         <Route path="/courses/:id" element={<CourseDetails />} />
+
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
 
 
         {/* STUDENT ROUTES - login required, role = student */}

@@ -12,6 +12,15 @@ const User = {
     return rows[0];
   },
 
+  async findIdByUsername(username) {
+    const [rows] = await db.execute(
+      "SELECT id FROM users WHERE username = ?",
+      [username]
+    );
+
+    return rows[0]?.id;
+  },
+
 
   // Find user by ID
   async findById(id) {
@@ -23,6 +32,24 @@ const User = {
     );
 
     return rows[0];
+  },
+
+  async updateFullName(id, fullName) {
+    const [result] = await db.execute(
+      "UPDATE users SET full_name = ? WHERE id = ?",
+      [fullName, id]
+    );
+
+    return result.affectedRows > 0;
+  },
+
+  async updatePassword(id, passwordHash) {
+    const [result] = await db.execute(
+      "UPDATE users SET password = ? WHERE id = ?",
+      [passwordHash, id]
+    );
+
+    return result.affectedRows > 0;
   },
 
 

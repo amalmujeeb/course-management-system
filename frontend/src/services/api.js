@@ -93,6 +93,13 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    if (
+      requestUrl.includes("/users/me/password") &&
+      error.response.data?.message === "Current password is incorrect."
+    ) {
+      return Promise.reject(error);
+    }
+
 
     // ==================================================
     // 4. Prevent duplicate redirects

@@ -16,6 +16,11 @@ export function saveAuth(token, user) {
   );
 }
 
+export function saveUser(user) {
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  window.dispatchEvent(new Event("auth-user-updated"));
+}
+
 
 // ==================================================
 // Read token
