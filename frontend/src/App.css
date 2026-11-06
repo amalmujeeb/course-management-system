@@ -667,6 +667,11 @@ a:hover {
   color: #92400e;
 }
 
+.enrollment-status { text-transform: capitalize; }
+.status-pending { background: #fef3c7; color: #92400e; }
+.status-approved { background: #dcfce7; color: #166534; }
+.status-rejected { background: #fee2e2; color: #b91c1c; }
+
 .role-badge {
   display: inline-block;
 

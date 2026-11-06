@@ -10,6 +10,7 @@ const emptyReport = {
   totalCourses: 0,
   totalStudents: 0,
   totalEnrollments: 0,
+  pendingEnrollments: 0,
   studentsWithEnrollments: 0,
   enrollmentsLast30Days: 0,
   coursesWithoutEnrollments: 0,
@@ -39,6 +40,7 @@ function AdminDashboard() {
     ["Total Courses", report.totalCourses],
     ["Total Students", report.totalStudents],
     ["Total Enrollments", report.totalEnrollments],
+    ["Pending Requests", report.pendingEnrollments],
     ["Students with Enrollments", report.studentsWithEnrollments],
     ["Enrollments in Last 30 Days", report.enrollmentsLast30Days],
     ["Courses without Enrollments", report.coursesWithoutEnrollments],
@@ -123,7 +125,7 @@ function AdminDashboard() {
           <div className="section-card-header"><h2>Administration</h2></div>
           <div className="quick-actions">
             <Link to="/admin/courses" className="quick-action"><span className="quick-action-icon"><FaBook /></span><span>Add, edit and delete courses</span></Link>
-            <Link to="/admin/enrollments" className="quick-action"><span className="quick-action-icon"><FaUsers /></span><span>View and remove enrollments</span></Link>
+            <Link to="/admin/enrollments" className="quick-action"><span className="quick-action-icon"><FaUsers /></span><span>Review requests and manage enrollments</span></Link>
             <Link to="/courses" className="quick-action"><span className="quick-action-icon"><FaSearch /></span><span>See the public course list</span></Link>
           </div>
         </section>

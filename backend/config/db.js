@@ -24,3 +24,4 @@ async function checkConnection() {
 checkConnection();
 
 module.exports = db;
+

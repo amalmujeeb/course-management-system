@@ -37,6 +37,8 @@ function CourseDetails() {
   const [enrolling, setEnrolling] = useState(false);
 
   const [enrolled, setEnrolled] = useState(false);
+  const [enrollmentStatus, setEnrollmentStatus] = useState("");
+  const [decisionNote, setDecisionNote] = useState("");
 
   const [checkingEnrollment, setCheckingEnrollment] =
     useState(false);
@@ -178,18 +180,15 @@ function CourseDetails() {
             response.data.enrollments || [];
 
 
-          const currentEnrollment =
-            enrollments.some(
-              (enrollment) =>
-                String(
-                  enrollment.course_id
-                ) === String(id)
-            );
-
-
-          setEnrolled(
-            currentEnrollment
+          const currentEnrollment = enrollments.find((enrollment) =>
+            String(enrollment.course_id) === String(id) && enrollment.status !== "rejected"
           );
+          const rejectedEnrollment = enrollments.find((enrollment) =>
+            String(enrollment.course_id) === String(id) && enrollment.status === "rejected"
+          );
+          setEnrolled(Boolean(currentEnrollment));
+          setEnrollmentStatus(currentEnrollment?.status || (rejectedEnrollment ? "rejected" : ""));
+          setDecisionNote(rejectedEnrollment?.decision_note || "");
 
         } catch (error) {
 
@@ -221,19 +220,6 @@ function CourseDetails() {
 
   const handleEnroll = async () => {
 
-    // Frontend availability check.
-    // Backend remains authoritative.
-    if (isCourseFull) {
-
-      setError(
-        "Course is full. No seats are available."
-      );
-
-      return;
-
-    }
-
-
     setError("");
 
     setSuccess("");
@@ -259,8 +245,10 @@ function CourseDetails() {
       );
 
 
-      // Course is now actively enrolled
+      // The request remains pending until an administrator reviews it.
       setEnrolled(true);
+      setEnrollmentStatus("pending");
+      setDecisionNote("");
 
 
       // Refresh course availability after enrollment
@@ -566,7 +554,7 @@ function CourseDetails() {
 
               <p className="error">
 
-                Course Full — no seats are currently available.
+                No seats are currently available. You may still request enrollment; approval requires an available seat.
 
               </p>
 
@@ -652,38 +640,10 @@ function CourseDetails() {
 
                     <>
 
-                      <p className="success">
-                        You are currently enrolled
-                        in this course.
+                      <p className={enrollmentStatus === "approved" ? "success" : "notice"}>
+                        {enrollmentStatus === "pending" ? "Request Pending Approval" : "Approved enrollment"}
                       </p>
-
-
-                      <Link
-                        to="/my-enrollments"
-                        className="btn btn-outline"
-                      >
-
-                        <FaGraduationCap />
-
-                        My Enrollments
-
-                      </Link>
-
-                    </>
-
-                  ) : isCourseFull ? (
-
-                    <>
-
-                      <button
-                        type="button"
-                        className="btn btn-danger btn-lg"
-                        disabled
-                      >
-
-                        Course Full
-
-                      </button>
+                      {enrollmentStatus === "approved" && <p>You are currently enrolled in this course.</p>}
 
 
                       <Link
@@ -703,6 +663,12 @@ function CourseDetails() {
 
                     <>
 
+                      {enrollmentStatus === "rejected" && (
+                        <p className="error">
+                          Request Rejected{decisionNote ? `: ${decisionNote}` : ". You may submit another request."}
+                        </p>
+                      )}
+
                       <button
                         type="button"
                         className="btn btn-primary btn-lg"
@@ -713,8 +679,8 @@ function CourseDetails() {
                         <FaShoppingCart />
 
                         {enrolling
-                          ? "Enrolling..."
-                          : "Enroll Now"}
+                          ? "Submitting..."
+                          : "Request Enrollment"}
 
                       </button>
 

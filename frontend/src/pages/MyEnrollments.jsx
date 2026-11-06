@@ -116,9 +116,11 @@ function MyEnrollments() {
   // Enrollment Summary
   // ======================================================
 
-  const totalEnrolledCourses = enrollments.length;
+  const confirmedEnrollments = enrollments.filter((enrollment) => enrollment.status === "approved");
+  const totalEnrolledCourses = confirmedEnrollments.length;
+  const pendingEnrollments = enrollments.filter((enrollment) => enrollment.status === "pending").length;
 
-  const totalEnrolledValue = enrollments.reduce(
+  const totalEnrolledValue = confirmedEnrollments.reduce(
     (total, enrollment) =>
       total + getSafePrice(enrollment.price),
     0
@@ -130,7 +132,7 @@ function MyEnrollments() {
       : 0;
 
   const distinctCategories = new Set(
-    enrollments
+    confirmedEnrollments
       .map((enrollment) => enrollment.category)
       .filter(Boolean)
   ).size;
@@ -200,8 +202,8 @@ function MyEnrollments() {
 
             <p className="page-subtitle">
               {user?.full_name
-                ? `${user.full_name}, these are the courses you are enrolled in.`
-                : "These are the courses you are enrolled in."}
+              ? `${user.full_name}, track your requests and approved courses here.`
+                : "Track your requests and approved courses here."}
             </p>
           </div>
 
@@ -291,6 +293,11 @@ function MyEnrollments() {
                   <span className="dashboard-card-label">
                     Total Enrolled Courses
                   </span>
+                </div>
+
+                <div className="dashboard-card">
+                  <span className="dashboard-card-value">{pendingEnrollments}</span>
+                  <span className="dashboard-card-label">Pending Requests</span>
                 </div>
 
                 {/* Total Value */}
@@ -414,6 +421,10 @@ function MyEnrollments() {
                         {enrollment.level}
                       </span>
 
+                      <span className={`tag enrollment-status status-${enrollment.status}`}>
+                        {enrollment.status === "pending" ? "Pending approval" : enrollment.status}
+                      </span>
+
                     </div>
 
                     {/* Course Title */}
@@ -455,7 +466,7 @@ function MyEnrollments() {
 
                       <li>
                         <strong>
-                          Enrolled on:
+                          Requested on:
                         </strong>{" "}
                         {formatDate(
                           enrollment.enrolled_at
@@ -463,6 +474,13 @@ function MyEnrollments() {
                       </li>
 
                     </ul>
+
+                    {enrollment.status === "rejected" && enrollment.decision_note && (
+                      <p className="error"><strong>Rejection reason:</strong> {enrollment.decision_note}</p>
+                    )}
+                    {enrollment.reviewed_at && enrollment.status !== "pending" && (
+                      <p className="course-card-summary">Decision date: {formatDate(enrollment.reviewed_at)}</p>
+                    )}
 
                     {/* View Course */}
 
@@ -475,7 +493,7 @@ function MyEnrollments() {
 
                     {/* Cancel Enrollment */}
 
-                    <button
+                    {enrollment.status === "pending" && <button
                       type="button"
                       className="btn btn-outline btn-block"
                       onClick={() =>
@@ -495,7 +513,7 @@ function MyEnrollments() {
                       {cancellingId === enrollment.id
                         ? "Cancelling..."
                         : "Cancel Enrollment"}
-                    </button>
+                    </button>}
 
                   </div>
 

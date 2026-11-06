@@ -10,6 +10,7 @@ const {
   getCourseEnrollments,
   getAllEnrollments,
   deleteEnrollment,
+  updateEnrollmentStatus,
 } = require("../controllers/enrollmentController");
 
 
@@ -69,6 +70,13 @@ router.get(
   authMiddleware,
   roleMiddleware(["admin"]),
   getAllEnrollments
+);
+
+router.patch(
+  "/:id/status",
+  authMiddleware,
+  roleMiddleware(["admin"]),
+  updateEnrollmentStatus
 );
 
 

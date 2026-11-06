@@ -33,31 +33,12 @@ const enrollInCourse = async (req, res) => {
     // Check whether course exists
     // --------------------------------------------------
 
-    const course = await Course.getById(courseId);
-
-    if (!course) {
-
-      return res.status(404).json({
-        message: "Course not found",
-      });
-
-    }
-
-
-    // --------------------------------------------------
-    // Atomic enrollment with capacity protection
-    // --------------------------------------------------
-
-    const enrollmentId =
-      await Enrollment.createWithCapacity(
-        studentId,
-        courseId
-      );
+    const enrollmentId = await Enrollment.createRequest(studentId, courseId);
 
 
     res.status(201).json({
 
-      message: "Course enrollment successful",
+      message: "Enrollment request submitted. Awaiting administrator approval.",
 
       enrollmentId,
 
@@ -72,19 +53,6 @@ const enrollInCourse = async (req, res) => {
 
 
     // --------------------------------------------------
-    // Course is full
-    // --------------------------------------------------
-
-    if (error.code === "COURSE_FULL") {
-
-      return res.status(409).json({
-        message:
-          "Course is full. No seats are available.",
-      });
-
-    }
-
-
     // --------------------------------------------------
     // Already enrolled
     // --------------------------------------------------
@@ -305,7 +273,7 @@ const getCourseEnrollments = async (req, res) => {
 const getAllEnrollments = async (req, res) => {
 
   try {
-    const { q, courseId, from, to } = req.query;
+    const { q, courseId, from, to, status } = req.query;
     const pageValue = req.query.page ?? "1";
     const limitValue = req.query.limit ?? "20";
     const sort = req.query.sort ?? "date";
@@ -337,6 +305,9 @@ const getAllEnrollments = async (req, res) => {
     if (to !== undefined && !validDate(to)) {
       return res.status(400).json({ message: "to must be a valid YYYY-MM-DD date" });
     }
+    if (status !== undefined && !new Set(["pending", "approved", "rejected"]).has(status)) {
+      return res.status(400).json({ message: "status must be pending, approved, or rejected" });
+    }
     if (from && to && from > to) {
       return res.status(400).json({ message: "from must not be later than to" });
     }
@@ -356,6 +327,7 @@ const getAllEnrollments = async (req, res) => {
     const { enrollments, total } = await Enrollment.getAdminPage({
       q: q?.trim() || "",
       courseId: courseId === undefined ? undefined : Number(courseId),
+      status,
       from,
       to,
       sort,
@@ -443,6 +415,35 @@ const deleteEnrollment = async (req, res) => {
 
 };
 
+const updateEnrollmentStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status, reason = "" } = req.body || {};
+  if (!/^\d+$/.test(id) || !Number.isSafeInteger(Number(id)) || Number(id) < 1) {
+    return res.status(400).json({ message: "Invalid enrollment ID" });
+  }
+  if (!["approved", "rejected"].includes(status)) {
+    return res.status(400).json({ message: "status must be approved or rejected" });
+  }
+  if (status === "rejected" && (typeof reason !== "string" || !reason.trim())) {
+    return res.status(400).json({ message: "A reason is required to reject an enrollment request" });
+  }
+  if (typeof reason !== "string" || reason.length > 2000) {
+    return res.status(400).json({ message: "reason must be 2000 characters or fewer" });
+  }
+  try {
+    await Enrollment.updateStatus(Number(id), status, req.user.id, reason.trim());
+    res.status(200).json({ message: `Enrollment request ${status}` });
+  } catch (error) {
+    if (error.code === "ENROLLMENT_NOT_FOUND") return res.status(404).json({ message: error.message });
+    if (["INVALID_STATUS", "ALREADY_ENROLLED", "COURSE_FULL"].includes(error.code)) {
+      return res.status(409).json({ message: error.message });
+    }
+    if (error.code === "COURSE_NOT_FOUND") return res.status(404).json({ message: error.message });
+    console.error("Error reviewing enrollment request:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 
 
 module.exports = {
@@ -458,6 +459,8 @@ module.exports = {
   getAllEnrollments,
 
   deleteEnrollment,
+
+  updateEnrollmentStatus,
 
 };
 

@@ -8,6 +8,7 @@ import Footer from "../components/Footer";
 
 const emptyReport = {
   enrolledCourses: 0,
+  pendingEnrollments: 0,
   distinctCategories: 0,
   earliestEnrollment: null,
   latestEnrollment: null,
@@ -48,6 +49,7 @@ function StudentDashboard() {
 
         <div className="dashboard-grid">
           <div className="dashboard-card"><span className="dashboard-card-value">{loading ? "..." : report.enrolledCourses}</span><span className="dashboard-card-label">My Enrolled Courses</span></div>
+          <div className="dashboard-card"><span className="dashboard-card-value">{loading ? "..." : report.pendingEnrollments}</span><span className="dashboard-card-label">Pending Requests</span></div>
           <div className="dashboard-card"><span className="dashboard-card-value">{loading ? "..." : report.distinctCategories}</span><span className="dashboard-card-label">Categories Explored</span></div>
           <div className="dashboard-card"><span className="dashboard-card-value dashboard-card-date">{loading ? "..." : formatDate(report.earliestEnrollment)}</span><span className="dashboard-card-label">First Enrollment</span></div>
           <div className="dashboard-card"><span className="dashboard-card-value dashboard-card-date">{loading ? "..." : formatDate(report.latestEnrollment)}</span><span className="dashboard-card-label">Latest Enrollment</span></div>
@@ -61,11 +63,11 @@ function StudentDashboard() {
           {!loading && report.recentEnrollments.length === 0 ? <p className="empty">You have not enrolled in any courses yet. Browse courses to get started.</p> : (
             <div className="table-wrapper">
               <table className="table">
-                <thead><tr><th>Course</th><th>Category</th><th>Level</th><th>Enrolled On</th></tr></thead>
+                <thead><tr><th>Course</th><th>Category</th><th>Level</th><th>Status</th><th>Requested On</th></tr></thead>
                 <tbody>{report.recentEnrollments.map((enrollment) => (
                   <tr key={enrollment.id}>
                     <td><Link to={`/courses/${enrollment.course_id}`}>{enrollment.title}</Link></td>
-                    <td>{enrollment.category}</td><td>{enrollment.level}</td><td>{formatDate(enrollment.enrolled_at)}</td>
+                    <td>{enrollment.category}</td><td>{enrollment.level}</td><td>{enrollment.status}</td><td>{formatDate(enrollment.enrolled_at)}</td>
                   </tr>
                 ))}</tbody>
               </table>

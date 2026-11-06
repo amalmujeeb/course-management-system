@@ -9,7 +9,7 @@ function ManageEnrollments() {
   const [courses, setCourses] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
-  const [filters, setFilters] = useState({ q: "", courseId: "", from: "", to: "", sort: "date", order: "desc", limit: 20 });
+  const [filters, setFilters] = useState({ q: "", courseId: "", from: "", to: "", status: "", sort: "date", order: "desc", limit: 20 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -27,7 +27,7 @@ function ManageEnrollments() {
       setError("");
       try {
         const params = Object.fromEntries(Object.entries({ ...filters, page: pagination.page })
-          .filter(([key, value]) => !["courseId", "from", "to"].includes(key) || value !== ""));
+          .filter(([key, value]) => !["courseId", "from", "to", "status"].includes(key) || value !== ""));
         const response = await api.get("/enrollments", { params });
         if (!active) return;
         const data = response.data;
@@ -65,6 +65,22 @@ function ManageEnrollments() {
       setReloadKey((key) => key + 1);
     } catch (deleteError) {
       setError(deleteError.response?.data?.message || "Could not delete the enrollment.");
+    }
+  };
+
+  const reviewEnrollment = async (enrollment, status) => {
+    const reason = status === "rejected"
+      ? window.prompt("Enter a reason for rejecting this request:")
+      : "";
+    if (status === "rejected" && !reason?.trim()) return;
+    setError("");
+    setSuccess("");
+    try {
+      const response = await api.patch(`/enrollments/${enrollment.id}/status`, { status, reason });
+      setSuccess(response.data.message);
+      setReloadKey((key) => key + 1);
+    } catch (reviewError) {
+      setError(reviewError.response?.data?.message || "Could not update the enrollment request.");
     }
   };
 
@@ -109,6 +125,14 @@ function ManageEnrollments() {
               onChange={(event) => updateFilter("to", event.target.value)} />
           </div>
           <div className="form-group">
+            <label htmlFor="statusFilter">Status</label>
+            <select id="statusFilter" className="input" value={filters.status}
+              onChange={(event) => updateFilter("status", event.target.value)}>
+              <option value="">All statuses</option><option value="pending">Pending</option>
+              <option value="approved">Approved</option><option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <div className="form-group">
             <label htmlFor="enrollmentSort">Sort by</label>
             <select id="enrollmentSort" className="input" value={filters.sort}
               onChange={(event) => updateFilter("sort", event.target.value)}>
@@ -144,12 +168,21 @@ function ManageEnrollments() {
           {!loading && enrollments.length > 0 && (
             <div className="table-wrapper">
               <table className="table">
-                <thead><tr><th>Student</th><th>Username</th><th>Course</th><th>Category</th><th>Level</th><th>Enrolled On</th><th className="table-actions-column">Actions</th></tr></thead>
+                <thead><tr><th>Student</th><th>Username</th><th>Course</th><th>Category</th><th>Level</th><th>Status</th><th>Requested On</th><th>Decision</th><th className="table-actions-column">Actions</th></tr></thead>
                 <tbody>{enrollments.map((enrollment) => (
                   <tr key={enrollment.id}>
                     <td>{enrollment.full_name}</td><td>{enrollment.username}</td><td>{enrollment.title}</td><td>{enrollment.category}</td>
-                    <td><span className="tag tag-level">{enrollment.level}</span></td><td>{formatDate(enrollment.enrolled_at)}</td>
-                    <td><button type="button" className="btn btn-small btn-danger" onClick={() => handleDelete(enrollment)}><FaTrash /> Remove</button></td>
+                    <td><span className="tag tag-level">{enrollment.level}</span></td>
+                    <td><span className={`tag enrollment-status status-${enrollment.status}`}>{enrollment.status}</span></td>
+                    <td>{formatDate(enrollment.enrolled_at)}</td>
+                    <td>{enrollment.status === "rejected" ? enrollment.decision_note : formatDate(enrollment.reviewed_at)}</td>
+                    <td>
+                      {enrollment.status === "pending" && <>
+                        <button type="button" className="btn btn-small btn-primary" onClick={() => reviewEnrollment(enrollment, "approved")}>Approve</button>{" "}
+                        <button type="button" className="btn btn-small btn-danger" onClick={() => reviewEnrollment(enrollment, "rejected")}>Reject</button>{" "}
+                      </>}
+                      <button type="button" className="btn btn-small btn-danger" onClick={() => handleDelete(enrollment)}><FaTrash /> Remove</button>
+                    </td>
                   </tr>
                 ))}</tbody>
               </table>

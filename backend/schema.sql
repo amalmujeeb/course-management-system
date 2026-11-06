@@ -49,10 +49,18 @@ CREATE TABLE IF NOT EXISTS enrollments (
 
     enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
+    status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'approved',
+
+    reviewed_by INT NULL,
+
+    reviewed_at TIMESTAMP NULL,
+
+    decision_note TEXT NULL,
+
     INDEX idx_enrollments_enrolled_at (enrolled_at),
 
-    -- A student cannot enroll in the same course twice
-    UNIQUE (student_id, course_id),
+    INDEX idx_enrollments_course_status (course_id, status),
+    INDEX idx_enrollments_student_course_status (student_id, course_id, status),
 
     -- Student account
     FOREIGN KEY (student_id)
@@ -64,6 +72,11 @@ CREATE TABLE IF NOT EXISTS enrollments (
     FOREIGN KEY (course_id)
         REFERENCES courses(id)
         ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    FOREIGN KEY (reviewed_by)
+        REFERENCES users(id)
+        ON DELETE SET NULL
         ON UPDATE CASCADE
 );
 

@@ -15,7 +15,7 @@ const Course = {
           (
             SELECT COUNT(*)
             FROM enrollments e
-            WHERE e.course_id = c.id
+            WHERE e.course_id = c.id AND e.status = 'approved'
           ) AS enrolled_count,
 
           CASE
@@ -23,7 +23,7 @@ const Course = {
             ELSE c.max_students - (
               SELECT COUNT(*)
               FROM enrollments e
-              WHERE e.course_id = c.id
+              WHERE e.course_id = c.id AND e.status = 'approved'
             )
           END AS seats_remaining,
 
@@ -32,7 +32,7 @@ const Course = {
             WHEN (
               SELECT COUNT(*)
               FROM enrollments e
-              WHERE e.course_id = c.id
+              WHERE e.course_id = c.id AND e.status = 'approved'
             ) >= c.max_students THEN TRUE
             ELSE FALSE
           END AS is_full
@@ -58,7 +58,7 @@ const Course = {
           (
             SELECT COUNT(*)
             FROM enrollments e
-            WHERE e.course_id = c.id
+            WHERE e.course_id = c.id AND e.status = 'approved'
           ) AS enrolled_count,
 
           CASE
@@ -66,7 +66,7 @@ const Course = {
             ELSE c.max_students - (
               SELECT COUNT(*)
               FROM enrollments e
-              WHERE e.course_id = c.id
+              WHERE e.course_id = c.id AND e.status = 'approved'
             )
           END AS seats_remaining,
 
@@ -75,7 +75,7 @@ const Course = {
             WHEN (
               SELECT COUNT(*)
               FROM enrollments e
-              WHERE e.course_id = c.id
+              WHERE e.course_id = c.id AND e.status = 'approved'
             ) >= c.max_students THEN TRUE
             ELSE FALSE
           END AS is_full
@@ -135,7 +135,7 @@ const Course = {
     const [rows] = await db.execute(
       `SELECT COUNT(*) AS enrolled_count
        FROM enrollments
-       WHERE course_id = ?`,
+       WHERE course_id = ? AND status = 'approved'`,
       [courseId]
     );
 
